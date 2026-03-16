@@ -75,6 +75,11 @@ services:
       POSTGRES_PASSWORD: password
     volumes:
       - ./data_volume/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # ==================== Microservices =====================
   intel-service:
@@ -100,6 +105,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_started
+      simulator:
+        condition: service_started
 
   attack-service:
     build:
@@ -124,6 +131,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_started
+      simulator:
+        condition: service_started
 
   damage-service:
     build:
@@ -147,6 +156,8 @@ services:
       elasticsearch:
         condition: service_healthy
       postgres:
+        condition: service_started
+      simulator:
         condition: service_started
 
   simulator:

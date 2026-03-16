@@ -1,5 +1,5 @@
-elasticsearch==9.3.0
+elasticsearch<9,>8
 pydantic_settings==2.13.1
 pydantic==2.12.5
 confluent_kafka==2.13.2
-psycopg2==2.9.11
+psycopg2-binary==2.9.11

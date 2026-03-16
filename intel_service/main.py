@@ -1,6 +1,6 @@
 from pydantic import ValidationError
 
-from shared.haversine import haversine_km
+from haversine import haversine_km
 from shared.kafka import kafka_service
 from shared.logger import log_event
 from shared.modools import IntelEvent

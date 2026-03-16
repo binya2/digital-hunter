@@ -66,7 +66,7 @@ class Postgres:
         conn.close()
 
     def execute_query(self, query: str, params: tuple = None, fetch: bool = False) -> Any:
-        with self.client.cursor() as cursor:
+        with self.client.cursor(cursor_factory=RealDictCursor) as cursor:
             cursor.execute(query, params or ())
             if fetch:
                 return cursor.fetchall()
