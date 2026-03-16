@@ -9,4 +9,4 @@ COPY simulator/ ./simulator/
 
 ENV PYTHONPATH=/app
 
-CMD ["python", "-m", "simulator.main"]
+CMD ["python", "-m", "simulator.simulator"]
