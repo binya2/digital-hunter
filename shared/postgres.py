@@ -68,4 +68,3 @@ class Postgres:
                 return cursor.rowcount
 
 postgres_service = Postgres()
-postgres_service.client
