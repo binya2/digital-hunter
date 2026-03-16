@@ -1,18 +1,25 @@
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from typing import Any
+
+from psycopg2.extras import RealDictCursor
+
 from shared.config import settings
 
 table_init = '''
              CREATE TABLE IF NOT EXISTS targets
              (
-                 entity_id        VARCHAR PRIMARY KEY,
-                 last_lat         FLOAT,
-                 last_lon         FLOAT,
-                 priority_level   INT,
-                 last_attack_id   VARCHAR,
-                 last_weapon_type VARCHAR,
-                 damage_status    VARCHAR
+                 entity_id          VARCHAR PRIMARY KEY,
+                 last_lat           FLOAT,
+                 last_lon           FLOAT,
+                 priority_level     INT,
+                 last_attack_id     VARCHAR,
+                 last_weapon_type   VARCHAR,
+                 damage_status      VARCHAR,
+                 date_time_creation TIMESTAMP,
+                 date_time_updating TIMESTAMP,
+                 distance           FLOAT,
+                 avg_speed          FLOAT
              ) \
              '''
 
@@ -52,7 +59,7 @@ class Postgres:
             dbname="postgres"
         )
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("SELECT 1 FROM pg_catalog.pg_database WHERE datname = %s", (settings.POSTGRES_DATABASE,))
             if not cur.fetchone():
                 cur.execute(f"CREATE DATABASE {settings.POSTGRES_DATABASE}")
@@ -68,3 +75,4 @@ class Postgres:
                 return cursor.rowcount
 
 postgres_service = Postgres()
+postgres_service.client

@@ -41,12 +41,13 @@ class Kafka:
                     continue
                 try:
                     msg_value = json.loads(msg.value().decode('utf-8'))
-                    next_event = message_handler(msg_value)
+                    message_handler(msg_value)
                     self.consumer.commit(message=msg)
+                    log_event("info", f"{settings.SERVICE_NAME} - successfully processing message")
                 except Exception as e:
-                    log_event("Error", f"Error processing message: {e}")
+                    log_event("Error", f"{settings.SERVICE_NAME} - Error processing message: {e}")
         except KeyboardInterrupt:
-            log_event("info", "Shutting down consumer...")
+            log_event("info", f"{settings.SERVICE_NAME} - Shutting down...")
         finally:
             self.consumer.close()
 
@@ -57,4 +58,6 @@ class Kafka:
             value=json.dumps(next_event).encode('utf-8')
         )
         self.producer.flush()
+
+
 kafka_service = Kafka()

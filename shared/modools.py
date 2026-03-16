@@ -30,12 +30,13 @@ class IntelEvent(BaseModel):
     timestamp: datetime
     signal_id: uuid.UUID
     entity_id: str = Field(..., min_length=7, max_length=7)
-    reported_lat: int = Field(..., min_length=-90, max_length=90)
-    reported_lon: int = Field(..., min_length=-180, max_length=180)
+    reported_lat: float = Field(..., ge=-90, le=90)
+    reported_lon: float = Field(..., ge=-180, le=180)
     signal_type: SignalType
     priority_level: int
 
     @field_validator('priority_level')
+    @classmethod
     def validate_priority(cls, v):
         if v not in [1, 2, 3, 4, 5, 99] and v is not None:
             raise ValueError("Priority must be between 1-5 or 99")

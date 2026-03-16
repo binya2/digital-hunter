@@ -10,27 +10,50 @@ def process_intel(signal: dict):
     try:
         valid_signal = IntelEvent(**signal)
 
-        query: str = "SELECT last_lat, last_lon FROM targets WHERE entity_id = %s"
+        query: str = """SELECT *
+                        FROM targets
+                        WHERE entity_id = %s"""
         params: tuple = (valid_signal.entity_id,)
-        db_target = ps.execute_query(query=query, params=params, fetch=True)[0]
+        results = ps.execute_query(query=query, params=params, fetch=True)
 
-        if db_target:
-            dist = haversine_km(db_target[0], db_target[1], valid_signal.reported_lat, valid_signal.reported_lon)
+        if results:
+            db_target = results[0]
+            dist = haversine_km(db_target['last_lat'], db_target["last_lon"], valid_signal.reported_lat,
+                                valid_signal.reported_lon)
             print(f"[INTEL] Target {valid_signal.entity_id} moved {dist:.2f} km (DB Hit)")
 
-            query = "UPDATE targets SET last_lat = %s, last_lon = %s WHERE entity_id = %s"
-            params = (valid_signal.reported_lat, valid_signal.reported_lon, valid_signal.entity_id)
+            query = """UPDATE targets
+                       SET last_lat           = %s,
+                           last_lon           = %s,
+                           date_time_updating = %s,
+                           priority_level     = %s
+                       WHERE entity_id = %s"""
+            params = (valid_signal.reported_lat,
+                      valid_signal.reported_lon,
+                      valid_signal.timestamp,
+                      valid_signal.priority_level,
+                      valid_signal.entity_id)
             ps.execute_query(query=query, params=params)
 
         else:
             valid_signal.priority_level = 99
-            print(f"[INTEL] New Target {valid_signal.entity_id}. Priority set to 99.")
-            query = "INSERT INTO targets (entity_id, last_lat, last_lon, priority_level) VALUES (%s, %s, %s, %s)"
-            params = (valid_signal.entity_id, valid_signal.reported_lat, valid_signal.reported_lon,
-                      valid_signal.priority_level)
+            query = """INSERT INTO targets (entity_id,
+                                            last_lat,
+                                            last_lon,
+                                            priority_level,
+                                            date_time_creation,
+                                            date_time_updating)
+                       VALUES (%s, %s, %s, %s, %s, %s)"""
+            params = (valid_signal.entity_id,
+                      valid_signal.reported_lat,
+                      valid_signal.reported_lon,
+                      valid_signal.priority_level,
+                      valid_signal.timestamp,
+                      valid_signal.timestamp)
             ps.execute_query(query=query, params=params)
     except ValidationError:
-        print("[ERROR] Invalid intel report format.")
+        raise Exception("Invalid intel message")
+
 
 if __name__ == "__main__":
     kafka_service.start_generic_consumer(process_intel)
