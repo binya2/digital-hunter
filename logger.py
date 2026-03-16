@@ -32,7 +32,8 @@ def log_event(level, message, extra_info=None):
 
     # 1. Structure the mandatory fields
     document = {
-        "timestamp": datetime.utcnow().isoformat(),
+        # "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now().isoformat(),
         "level": level.upper(),  # Ensuring levels are always uppercase for consistency
         "message": message
     }
