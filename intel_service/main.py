@@ -6,6 +6,17 @@ from shared.modools import IntelEvent
 from shared.postgres import postgres_service as ps
 
 
+def average_speed(dist_km, db_target, valid_signal):
+    dist_meters = dist_km * 1000
+    last_time = db_target['date_time_updating']
+    current_time = valid_signal.timestamp
+    time_diff_seconds = (current_time - last_time).total_seconds()
+
+    if time_diff_seconds > 0:
+        return dist_meters / time_diff_seconds
+    return 0.0
+
+
 def process_intel(signal: dict):
     try:
         valid_signal = IntelEvent(**signal)
@@ -18,20 +29,25 @@ def process_intel(signal: dict):
 
         if results:
             db_target = results[0]
-            dist = haversine_km(db_target['last_lat'], db_target["last_lon"], valid_signal.reported_lat,
-                                valid_signal.reported_lon)
-            print(f"[INTEL] Target {valid_signal.entity_id} moved {dist:.2f} km (DB Hit)")
+
+            dist_km = haversine_km(db_target['last_lat'], db_target["last_lon"], valid_signal.reported_lat,
+                                   valid_signal.reported_lon)
+            speed_mps = average_speed(dist_km, db_target, valid_signal)
 
             query = """UPDATE targets
                        SET last_lat           = %s,
                            last_lon           = %s,
                            date_time_updating = %s,
-                           priority_level     = %s
+                           priority_level     = %s,
+                           distance           = %s,
+                           avg_speed          = %s
                        WHERE entity_id = %s"""
             params = (valid_signal.reported_lat,
                       valid_signal.reported_lon,
                       valid_signal.timestamp,
                       valid_signal.priority_level,
+                      dist_km,
+                      speed_mps,
                       valid_signal.entity_id)
             ps.execute_query(query=query, params=params)
 
@@ -42,14 +58,18 @@ def process_intel(signal: dict):
                                             last_lon,
                                             priority_level,
                                             date_time_creation,
-                                            date_time_updating)
-                       VALUES (%s, %s, %s, %s, %s, %s)"""
+                                            date_time_updating,
+                                            distance,
+                                            avg_speed)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
             params = (valid_signal.entity_id,
                       valid_signal.reported_lat,
                       valid_signal.reported_lon,
                       valid_signal.priority_level,
                       valid_signal.timestamp,
-                      valid_signal.timestamp)
+                      valid_signal.timestamp,
+                      0.0,
+                      0.0)
             ps.execute_query(query=query, params=params)
     except ValidationError:
         raise Exception("Invalid intel message")
