@@ -12,10 +12,10 @@ pip install -r requirements.txt
 
 ### 2. Run the simulator
 
-From the `students_part_1/` directory, in a **separate terminal** (with the venv activated):
+From the `simulator/` directory, in a **separate terminal** (with the venv activated):
 
 ```bash
-cd students_part_1
+cd simulator
 python simulator.py
 ```
 
