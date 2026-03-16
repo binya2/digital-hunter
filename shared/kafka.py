@@ -1,7 +1,7 @@
 import json
-from typing import Callable
+from typing import Callable, Any
 
-from confluent_kafka import Consumer
+from confluent_kafka import Consumer, Producer
 
 from shared.config import settings
 from shared.logger import log_event
@@ -22,6 +22,12 @@ class Kafka:
                 'enable.auto.commit': False
             })
         return self._consumer
+
+    @property
+    def producer(self):
+        if self._producer is None:
+            self._producer = Producer({'bootstrap.servers': settings.KAFKA_BROKER})
+        return self._producer
 
     def start_generic_consumer(self, message_handler: Callable):
         self.consumer.subscribe(settings.CONSUME_TOPIC.split(","))
@@ -44,5 +50,11 @@ class Kafka:
         finally:
             self.consumer.close()
 
-
+    def producer_message(self, next_event: dict[str, Any]) -> None:
+        self.producer.poll(0)
+        self.producer.produce(
+            settings.PRODUCE_TOPIC,
+            value=json.dumps(next_event).encode('utf-8')
+        )
+        self.producer.flush()
 kafka_service = Kafka()
