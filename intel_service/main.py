@@ -2,6 +2,7 @@ from pydantic import ValidationError
 
 from shared.haversine import haversine_km
 from shared.kafka import kafka_service
+from shared.logger import log_event
 from shared.modools import IntelEvent
 from shared.postgres import postgres_service as ps
 
@@ -30,6 +31,8 @@ def process_intel(signal: dict):
         if results:
             db_target = results[0]
 
+            if db_target.get('damage_status') == 'destroyed':
+                raise ValueError(f"Received intelligence on an already destroyed target: {valid_signal.entity_id}")
             dist_km = haversine_km(db_target['last_lat'], db_target["last_lon"], valid_signal.reported_lat,
                                    valid_signal.reported_lon)
             speed_mps = average_speed(dist_km, db_target, valid_signal)
@@ -71,8 +74,14 @@ def process_intel(signal: dict):
                       0.0,
                       0.0)
             ps.execute_query(query=query, params=params)
-    except ValidationError:
-        raise Exception("Invalid intel message")
+    except (ValidationError, ValueError) as e:
+        error_payload = {
+            "original_message": signal,
+            "error_reason": str(e),
+            "source": "intel_service"
+        }
+        kafka_service.producer_message(next_event=error_payload)
+        log_event("Error",f"INTEL - Faulty message routed to intel_signals_dlq. Reason: {e}")
 
 
 if __name__ == "__main__":

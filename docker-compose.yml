@@ -70,8 +70,90 @@ services:
     container_name: local-postgres
     ports: [ '5432:5432' ]
     environment:
-      POSTGRES_DB: dev_db
+      POSTGRES_DB: digital_hunter
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     volumes:
       - ./data_volume/postgres:/var/lib/postgresql/data
+
+  # ==================== Microservices =====================
+  intel-service:
+    build:
+      context: .
+      dockerfile: intel_service/Dockerfile
+    container_name: intel-service
+    environment:
+      - SERVICE_NAME=intel_service
+      - KAFKA_BROKER=kafka:29092
+      - CONSUME_TOPIC=intel
+      - PRODUCE_TOPIC=intel_signals_dlq
+      - GROUP_ID=intel_group
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DATABASE=digital_hunter
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    depends_on:
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+
+  attack-service:
+    build:
+      context: .
+      dockerfile: attack_service/Dockerfile
+    container_name: attack-service
+    environment:
+      - SERVICE_NAME=attack_service
+      - KAFKA_BROKER=kafka:29092
+      - CONSUME_TOPIC=attack
+      - PRODUCE_TOPIC=intel_signals_dlq
+      - GROUP_ID=attack_group
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DATABASE=digital_hunter
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    depends_on:
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+
+  damage-service:
+    build:
+      context: .
+      dockerfile: damage_service/Dockerfile
+    container_name: damage-service
+    environment:
+      - SERVICE_NAME=damage_service
+      - KAFKA_BROKER=kafka:29092
+      - CONSUME_TOPIC=damage
+      - PRODUCE_TOPIC=intel_signals_dlq
+      - GROUP_ID=damage_group
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DATABASE=digital_hunter
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    depends_on:
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+
+  simulator:
+    build:
+      context: .
+      dockerfile: simulator/Dockerfile
+    container_name: simulator
+    depends_on:
+      kafka:
+        condition: service_healthy

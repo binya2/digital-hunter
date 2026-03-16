@@ -17,5 +17,8 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = "password"
     POSTGRES_DATABASE: str = "digital_hunter"
 
+    # Elasticsearch
+    ELASTICSEARCH_HOST: str = "localhost"
+
 
 settings = Settings()

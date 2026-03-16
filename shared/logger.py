@@ -20,9 +20,11 @@ Note: If Elasticsearch is unreachable, the log will fallback to the console (Loc
 from elasticsearch import Elasticsearch
 from datetime import datetime
 
+from shared.config import settings
+
 # Initialize Elasticsearch client
 # Ensure the host 'localhost' matches your docker-compose configuration
-es = Elasticsearch(['http://localhost:9200'])
+es = Elasticsearch([f'http://{settings.ELASTICSEARCH_HOST}'])
 
 
 def log_event(level, message, extra_info=None):
