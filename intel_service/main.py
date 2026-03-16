@@ -13,6 +13,7 @@ def process_intel(signal: dict):
         query: str = "SELECT last_lat, last_lon FROM targets WHERE entity_id = %s"
         params: tuple = (valid_signal.entity_id,)
         db_target = ps.execute_query(query=query, params=params, fetch=True)[0]
+
         if db_target:
             dist = haversine_km(db_target[0], db_target[1], valid_signal.reported_lat, valid_signal.reported_lon)
             print(f"[INTEL] Target {valid_signal.entity_id} moved {dist:.2f} km (DB Hit)")
